@@ -1,3 +1,6 @@
+"""
+Email utilities using Resend API
+"""
 import asyncio
 import resend
 import os
@@ -10,12 +13,13 @@ load_dotenv(ROOT_DIR / '.env')
 
 logger = logging.getLogger(__name__)
 
-# Resend Email
+# Resend Email configuration
 resend.api_key = os.environ.get("RESEND_API_KEY", "")
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
 
 
 async def send_email_async(recipient: str, subject: str, html: str):
+    """Send an email asynchronously using Resend API"""
     params = {
         "from": SENDER_EMAIL,
         "to": [recipient],

@@ -1,3 +1,6 @@
+"""
+Database connection module for Nexus HR
+"""
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 from pathlib import Path
 from dotenv import load_dotenv

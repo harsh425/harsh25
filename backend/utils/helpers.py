@@ -1,12 +1,16 @@
+"""
+Helper functions for Nexus HR
+"""
 from datetime import datetime, timezone, timedelta
 import uuid
 import math
 
 from .database import db
-from .constants import KENYAN_HOLIDAYS_2025, OFFICE_LOCATION
+from .constants import KENYAN_HOLIDAYS, OFFICE_LOCATION
 
 
 async def log_activity(user_id: str, action: str, details: str):
+    """Log user activity to the database"""
     activity = {
         "activity_id": str(uuid.uuid4()),
         "user_id": user_id,
@@ -29,14 +33,14 @@ def calculate_working_days(start_date_str: str, end_date_str: str) -> int:
         # Skip weekends (Saturday=5, Sunday=6)
         if current.weekday() < 5:
             # Skip public holidays
-            if current.isoformat() not in KENYAN_HOLIDAYS_2025:
+            if current.isoformat() not in KENYAN_HOLIDAYS:
                 working_days += 1
         current += timedelta(days=1)
     
     return working_days
 
 
-def calculate_distance(lat1, lon1, lat2, lon2):
+def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate distance between two coordinates in meters using Haversine formula"""
     R = 6371000  # Earth radius in meters
     phi1 = math.radians(lat1)
@@ -50,7 +54,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return R * c
 
 
-def is_within_geofence(lat, lon):
+def is_within_geofence(lat: float, lon: float) -> tuple:
     """Check if coordinates are within office geofence"""
     distance = calculate_distance(
         lat, lon,
