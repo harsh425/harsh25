@@ -685,6 +685,135 @@ async def deactivate_employee(employee_number: str, current_user: dict = Depends
     return {"message": "Employee deactivated successfully"}
 
 
+@api_router.post("/employees/{employee_number}/transfer")
+async def transfer_employee(employee_number: str, transfer: EmployeeTransfer, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can transfer employees")
+    
+    # Get employee
+    employee = await db.employees.find_one({"employee_number": employee_number}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    # Get target company
+    to_company = await db.companies.find_one({"company_id": transfer.to_company_id}, {"_id": 0})
+    if not to_company:
+        raise HTTPException(status_code=404, detail="Target company not found")
+    
+    if to_company["status"] != "active":
+        raise HTTPException(status_code=400, detail="Cannot transfer to inactive company")
+    
+    from_company_id = employee.get("company_id")
+    from_company_name = employee.get("company_name", "Unknown")
+    
+    # Create transfer record
+    transfer_record = {
+        "transfer_id": str(uuid.uuid4()),
+        "employee_number": employee_number,
+        "employee_name": employee.get("full_name", f"{employee.get('first_name', '')} {employee.get('last_name', '')}"),
+        "from_company_id": from_company_id,
+        "from_company_name": from_company_name,
+        "to_company_id": transfer.to_company_id,
+        "to_company_name": to_company["company_name"],
+        "transfer_date": transfer.transfer_date,
+        "reason": transfer.reason,
+        "created_by": current_user["full_name"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.transfers.insert_one(transfer_record)
+    
+    # Update employee record
+    await db.employees.update_one(
+        {"employee_number": employee_number},
+        {
+            "$set": {
+                "company_id": transfer.to_company_id,
+                "company_name": to_company["company_name"]
+            },
+            "$push": {"transfer_history": transfer_record}
+        }
+    )
+    
+    # Generate transfer letter (stored in documents)
+    letter_content = f"""
+    TRANSFER LETTER
+    
+    Date: {datetime.now().strftime('%B %d, %Y')}
+    
+    To: {employee.get('full_name')}
+    Employee Number: {employee_number}
+    
+    Dear {employee.get('first_name')},
+    
+    Re: TRANSFER TO {to_company['company_name'].upper()}
+    
+    We are pleased to inform you of your transfer from {from_company_name} to {to_company['company_name']}, 
+    effective {datetime.fromisoformat(transfer.transfer_date).strftime('%B %d, %Y')}.
+    
+    Reason: {transfer.reason}
+    
+    Your terms and conditions of employment remain unchanged unless otherwise communicated.
+    
+    We wish you success in your new assignment.
+    
+    Yours faithfully,
+    HR Department
+    """
+    
+    # Store transfer letter as document
+    transfer_doc = {
+        "document_id": str(uuid.uuid4()),
+        "employee_id": employee_number,
+        "category": "Transfer Letter",
+        "document_type": "official",
+        "filename": f"Transfer_Letter_{employee_number}_{datetime.now().strftime('%Y%m%d')}.txt",
+        "content": letter_content,
+        "uploaded_by": current_user["user_id"],
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+        "content_type": "text/plain"
+    }
+    
+    await db.documents.insert_one(transfer_doc)
+    
+    # Send email notification
+    if employee.get("email"):
+        email_html = f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>Employee Transfer Notification</h2>
+            <p>Dear {employee.get('first_name')},</p>
+            <p>This is to inform you that you have been transferred to <strong>{to_company['company_name']}</strong>, 
+            effective {datetime.fromisoformat(transfer.transfer_date).strftime('%B %d, %Y')}.</p>
+            <p><strong>Reason:</strong> {transfer.reason}</p>
+            <p>Your transfer letter has been generated and is available in your document portal.</p>
+            <p>For any questions, please contact HR.</p>
+            <br>
+            <p>Best regards,<br>HR Department</p>
+        </div>
+        """
+        await send_email_async(employee["email"], "Employee Transfer Notification", email_html)
+    
+    await log_activity(current_user["user_id"], "employee_transferred", 
+                      f"Transferred {employee_number} from {from_company_name} to {to_company['company_name']}")
+    
+    return {
+        "message": "Employee transferred successfully",
+        "transfer_id": transfer_record["transfer_id"],
+        "transfer_letter_id": transfer_doc["document_id"]
+    }
+
+@api_router.get("/employees/{employee_number}/transfers")
+async def get_employee_transfers(employee_number: str, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "hr_assistant", "director"]:
+        # Employees can only see their own transfers
+        employee = await db.employees.find_one({"employee_number": employee_number}, {"_id": 0})
+        if not employee or employee.get("email") != current_user["email"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
+    transfers = await db.transfers.find({"employee_number": employee_number}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return transfers
+
+
 @api_router.post("/employees/bulk-import")
 async def bulk_import_employees(import_data: BulkEmployeeImport, current_user: dict = Depends(get_current_user)):
     if current_user["role"] not in ["admin", "hr_assistant"]:
