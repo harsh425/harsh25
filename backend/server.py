@@ -366,22 +366,31 @@ async def reset_password(request: PasswordResetConfirm):
 
 @api_router.post("/employees")
 async def create_employee(employee: EmployeeCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can create employees")
+    if current_user["role"] not in ["admin", "hr_assistant"]:
+        raise HTTPException(status_code=403, detail="Only admins and HR assistants can create employees")
     
-    existing = await db.employees.find_one({"employee_id": employee.employee_id}, {"_id": 0})
+    existing = await db.employees.find_one({"employee_number": employee.employee_number}, {"_id": 0})
     if existing:
-        raise HTTPException(status_code=400, detail="Employee ID already exists")
+        raise HTTPException(status_code=400, detail="Employee number already exists")
     
     emp_doc = employee.model_dump()
     emp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     emp_doc["status"] = "active"
     emp_doc["created_by"] = current_user["user_id"]
+    emp_doc["full_name"] = f"{employee.first_name} {employee.last_name}"  # For backward compatibility
+    
+    # Initialize leave balances (Kenyan labor law: 21 days annual leave)
+    emp_doc["leave_balance"] = {
+        "annual": 21,
+        "sick": 30,  # Not usually limited but tracked
+        "maternity": 0,  # Allocated as needed
+        "paternity": 0   # Allocated as needed
+    }
     
     await db.employees.insert_one(emp_doc)
-    await log_activity(current_user["user_id"], "employee_created", f"Created employee {employee.employee_id}")
+    await log_activity(current_user["user_id"], "employee_created", f"Created employee {employee.employee_number}")
     
-    return {"message": "Employee created successfully", "employee_id": employee.employee_id}
+    return {"message": "Employee created successfully", "employee_number": employee.employee_number}
 
 @api_router.get("/employees")
 async def get_all_employees(current_user: dict = Depends(get_current_user)):
