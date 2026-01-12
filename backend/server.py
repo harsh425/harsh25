@@ -85,10 +85,13 @@ class TokenResponse(BaseModel):
     user: dict
 
 class EmployeeCreate(BaseModel):
+    # Company Assignment
+    company_id: str
+    
     # Personal Info
+    employee_number: str  # HR Admin provides manually
     first_name: str
     last_name: str
-    employee_number: str
     date_of_birth: str
     gender: str
     marital_status: str
