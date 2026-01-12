@@ -522,6 +522,71 @@ async def download_document(document_id: str, current_user: dict = Depends(get_c
     }
 
 
+@api_router.get("/documents/expiring-soon")
+async def get_expiring_documents(days: int = 30, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    threshold_date = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+    
+    expiring_docs = await db.documents.find({
+        "expiry_date": {"$ne": None, "$lte": threshold_date}
+    }, {"_id": 0}).to_list(1000)
+    
+    return expiring_docs
+
+
+@api_router.post("/documents/send-expiry-reminders")
+async def send_expiry_reminders(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    # Get documents expiring in 30 days that haven't been notified
+    threshold_date = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    
+    expiring_docs = await db.documents.find({
+        "expiry_date": {"$ne": None, "$lte": threshold_date},
+        "expiry_notified": False
+    }, {"_id": 0}).to_list(1000)
+    
+    reminder_count = 0
+    
+    for doc in expiring_docs:
+        # Get employee details
+        employee = await db.employees.find_one({"employee_id": doc["employee_id"]}, {"_id": 0})
+        if not employee:
+            continue
+        
+        # Send reminder email
+        expiry_date = datetime.fromisoformat(doc["expiry_date"]).strftime('%Y-%m-%d')
+        email_html = f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>Document Expiry Reminder</h2>
+            <p>Hello {employee['full_name']},</p>
+            <p>Your document is expiring soon:</p>
+            <ul>
+                <li><strong>Category:</strong> {doc['category']}</li>
+                <li><strong>Filename:</strong> {doc['filename']}</li>
+                <li><strong>Expiry Date:</strong> {expiry_date}</li>
+            </ul>
+            <p>Please upload a new version before it expires.</p>
+        </div>
+        """
+        
+        result = await send_email_async(employee["email"], "Document Expiry Reminder", email_html)
+        if result:
+            # Mark as notified
+            await db.documents.update_one(
+                {"document_id": doc["document_id"]},
+                {"$set": {"expiry_notified": True}}
+            )
+            reminder_count += 1
+    
+    await log_activity(current_user["user_id"], "expiry_reminders_sent", f"Sent {reminder_count} document expiry reminders")
+    
+    return {"message": f"Sent {reminder_count} expiry reminders"}
+
+
 # ============ CONTRACT MANAGEMENT ROUTES ============
 
 @api_router.post("/contracts")
