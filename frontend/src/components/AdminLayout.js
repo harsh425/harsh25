@@ -41,6 +41,14 @@ const AdminLayout = ({ children }) => {
             Contracts
           </NavLink>
           <NavLink
+            to="/leave-approvals"
+            data-testid="nav-leave-approvals"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+          >
+            <Calendar className="w-5 h-5 mr-3" />
+            Leave Approvals
+          </NavLink>
+          <NavLink
             to="/activity-logs"
             data-testid="nav-activity-logs"
             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
