@@ -51,7 +51,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
     full_name: str
-    role: str  # "admin" or "employee"
+    role: str  # "admin", "employee", "hr_assistant", "director", "manager"
 
 class UserLogin(BaseModel):
     email: EmailStr
