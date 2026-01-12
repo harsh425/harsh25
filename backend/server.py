@@ -16,6 +16,7 @@ import asyncio
 import resend
 import secrets
 from pathlib import Path
+import math
 
 
 ROOT_DIR = Path(__file__).parent
