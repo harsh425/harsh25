@@ -240,6 +240,24 @@ async def send_email_async(recipient: str, subject: str, html: str):
         logger.error(f"Failed to send email: {str(e)}")
         return None
 
+def calculate_working_days(start_date_str: str, end_date_str: str) -> int:
+    """Calculate working days excluding weekends and Kenyan public holidays"""
+    start = datetime.fromisoformat(start_date_str).date()
+    end = datetime.fromisoformat(end_date_str).date()
+    
+    working_days = 0
+    current = start
+    
+    while current <= end:
+        # Skip weekends (Saturday=5, Sunday=6)
+        if current.weekday() < 5:
+            # Skip public holidays
+            if current.isoformat() not in KENYAN_HOLIDAYS_2025:
+                working_days += 1
+        current += timedelta(days=1)
+    
+    return working_days
+
 
 # ============ AUTHENTICATION ROUTES ============
 
