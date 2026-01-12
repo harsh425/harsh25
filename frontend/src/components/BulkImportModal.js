@@ -17,7 +17,8 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
   const downloadTemplate = () => {
     const template = [
       {
-        employee_number: 'EMP001',
+        company_id: 'COMPANY_ID_HERE',
+        employee_number: 'INT001',
         first_name: 'John',
         last_name: 'Doe',
         date_of_birth: '1990-01-15',
