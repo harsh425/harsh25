@@ -77,6 +77,11 @@ function App() {
               <ActivityLogs />
             </PrivateRoute>
           } />
+          <Route path="/leave-approvals" element={
+            <PrivateRoute>
+              <LeaveApprovals />
+            </PrivateRoute>
+          } />
           
           {/* Employee Routes */}
           <Route path="/employee-dashboard" element={
@@ -87,6 +92,11 @@ function App() {
           <Route path="/my-documents" element={
             <PrivateRoute>
               <DocumentManagement />
+            </PrivateRoute>
+          } />
+          <Route path="/my-leave" element={
+            <PrivateRoute>
+              <LeaveManagement />
             </PrivateRoute>
           } />
           
