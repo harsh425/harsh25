@@ -21,6 +21,9 @@ import LeaveApprovals from '@/pages/LeaveApprovals';
 import AttendancePage from '@/pages/AttendancePage';
 import AttendanceVerification from '@/pages/AttendanceVerification';
 import CompanyManagement from '@/pages/CompanyManagement';
+import ReportsDashboard from '@/pages/ReportsDashboard';
+import PerformanceTracking from '@/pages/PerformanceTracking';
+import PayrollDocuments from '@/pages/PayrollDocuments';
 
 // Auth context
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -93,6 +96,21 @@ function App() {
           <Route path="/attendance-verification" element={
             <PrivateRoute>
               <AttendanceVerification />
+            </PrivateRoute>
+          } />
+          <Route path="/reports" element={
+            <PrivateRoute adminOnly>
+              <ReportsDashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/performance" element={
+            <PrivateRoute adminOnly>
+              <PerformanceTracking />
+            </PrivateRoute>
+          } />
+          <Route path="/payroll-documents" element={
+            <PrivateRoute adminOnly>
+              <PayrollDocuments />
             </PrivateRoute>
           } />
           

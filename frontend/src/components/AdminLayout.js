@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { LayoutDashboard, Users, FileText, Activity, LogOut, Calendar, MapPin, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Activity, LogOut, Calendar, MapPin, Building2, BarChart3, Target, DollarSign } from 'lucide-react';
 
 const AdminLayout = ({ children }) => {
   const { user, logout } = useAuth();
@@ -63,6 +63,30 @@ const AdminLayout = ({ children }) => {
           >
             <MapPin className="w-5 h-5 mr-3" />
             Attendance
+          </NavLink>
+          <NavLink
+            to="/reports"
+            data-testid="nav-reports"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+          >
+            <BarChart3 className="w-5 h-5 mr-3" />
+            Reports
+          </NavLink>
+          <NavLink
+            to="/performance"
+            data-testid="nav-performance"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+          >
+            <Target className="w-5 h-5 mr-3" />
+            Performance
+          </NavLink>
+          <NavLink
+            to="/payroll-documents"
+            data-testid="nav-payroll-documents"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+          >
+            <DollarSign className="w-5 h-5 mr-3" />
+            Payroll Docs
           </NavLink>
           <NavLink
             to="/activity-logs"
