@@ -105,7 +105,8 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
       const parsedData = await parseFile(file);
       
       // Validate and transform data
-      const employees = parsedData.filter(row => row.employee_number && row.first_name).map(row => ({
+      const employees = parsedData.filter(row => row.employee_number && row.first_name && row.company_id).map(row => ({
+        company_id: String(row.company_id),
         employee_number: String(row.employee_number),
         first_name: String(row.first_name),
         last_name: String(row.last_name),
