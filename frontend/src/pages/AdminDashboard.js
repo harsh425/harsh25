@@ -164,6 +164,57 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Document Expiry Section */}
+        {expiringDocs.length > 0 && (
+          <div className="mt-8">
+            <div className="card p-6">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-6 h-6 text-orange-600" />
+                  <h3 className="text-xl font-semibold text-slate-900">
+                    Documents Expiring Soon ({expiringDocs.length})
+                  </h3>
+                </div>
+                <button
+                  onClick={handleSendReminders}
+                  disabled={sendingReminders}
+                  data-testid="send-expiry-reminders-button"
+                  className="btn-secondary flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  {sendingReminders ? 'Sending...' : 'Send Reminders'}
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Employee ID</th>
+                      <th className="px-4 py-2 text-left">Category</th>
+                      <th className="px-4 py-2 text-left">Filename</th>
+                      <th className="px-4 py-2 text-left">Expiry Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expiringDocs.slice(0, 10).map((doc, index) => (
+                      <tr key={index} className="border-t border-slate-200">
+                        <td className="px-4 py-2 mono">{doc.employee_id}</td>
+                        <td className="px-4 py-2">
+                          <span className="badge badge-warning">{doc.category}</span>
+                        </td>
+                        <td className="px-4 py-2">{doc.filename}</td>
+                        <td className="px-4 py-2 mono text-orange-600">
+                          {new Date(doc.expiry_date).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
