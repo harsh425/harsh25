@@ -18,6 +18,8 @@ import SignContract from '@/pages/SignContract';
 import ActivityLogs from '@/pages/ActivityLogs';
 import LeaveManagement from '@/pages/LeaveManagement';
 import LeaveApprovals from '@/pages/LeaveApprovals';
+import AttendancePage from '@/pages/AttendancePage';
+import AttendanceVerification from '@/pages/AttendanceVerification';
 
 // Auth context
 import { AuthProvider, useAuth } from '@/context/AuthContext';
