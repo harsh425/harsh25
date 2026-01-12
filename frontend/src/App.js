@@ -6,6 +6,8 @@ import '@/App.css';
 // Pages
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import AdminDashboard from '@/pages/AdminDashboard';
 import EmployeeDashboard from '@/pages/EmployeeDashboard';
 import EmployeeList from '@/pages/EmployeeList';
