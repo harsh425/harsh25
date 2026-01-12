@@ -17,16 +17,33 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
   const downloadTemplate = () => {
     const template = [
       {
-        employee_id: 'EMP001',
-        full_name: 'John Doe',
+        employee_number: 'EMP001',
+        first_name: 'John',
+        last_name: 'Doe',
+        date_of_birth: '1990-01-15',
+        gender: 'Male',
+        marital_status: 'Single',
         email: 'john.doe@company.com',
+        phone_number: '+254700000000',
+        mpesa_number: '+254700000000',
+        kra_pin: 'A000000000A',
+        nssf_number: '1234567890',
+        shif_number: 'SH000000000',
+        emergency_contact_name: 'Jane Doe',
+        emergency_contact_phone: '+254700000001',
+        emergency_contact_relationship: 'Spouse',
+        emergency_contact_email: 'jane.doe@email.com',
+        bank_account_name: 'John Doe',
+        bank_name: 'Equity Bank',
+        bank_branch_name: 'Nairobi Branch',
+        bank_branch_code: '068',
+        bank_account_number: '0123456789',
         department: 'Engineering',
         position: 'Software Engineer',
         employment_type: 'Full-time',
         contract_start_date: '2025-01-01',
         contract_end_date: '',
-        phone: '+254700000000',
-        emergency_contact: 'Jane Doe +254700000001'
+        manager_id: ''
       }
     ];
 
