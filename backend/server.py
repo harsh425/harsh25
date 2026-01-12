@@ -452,20 +452,20 @@ async def update_employee(employee_number: str, updates: EmployeeUpdate, current
     await log_activity(current_user["user_id"], "employee_updated", f"Updated employee {employee_number}")
     return {"message": "Employee updated successfully"}
 
-@api_router.delete("/employees/{employee_id}")
-async def deactivate_employee(employee_id: str, current_user: dict = Depends(get_current_user)):
+@api_router.delete("/employees/{employee_number}")
+async def deactivate_employee(employee_number: str, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can deactivate employees")
     
     result = await db.employees.update_one(
-        {"employee_id": employee_id},
+        {"employee_number": employee_number},
         {"$set": {"status": "inactive"}}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Employee not found")
     
-    await log_activity(current_user["user_id"], "employee_deactivated", f"Deactivated employee {employee_id}")
+    await log_activity(current_user["user_id"], "employee_deactivated", f"Deactivated employee {employee_number}")
     return {"message": "Employee deactivated successfully"}
 
 
