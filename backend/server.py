@@ -53,6 +53,13 @@ KENYAN_HOLIDAYS_2025 = [
     "2025-12-26",  # Boxing Day
 ]
 
+# Office Location for Geofencing (Nairobi CBD - example coordinates)
+OFFICE_LOCATION = {
+    "latitude": -1.286389,
+    "longitude": 36.817223,
+    "radius_meters": 200  # 200m radius
+}
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
