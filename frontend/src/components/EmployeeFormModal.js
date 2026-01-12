@@ -94,6 +94,31 @@ const EmployeeFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
         </DialogHeader>
 
         <form onSubmit={handleSubmit} data-testid="employee-form">
+          {/* Company Selection */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-sm">
+            <label className="label">Select Company *</label>
+            <select
+              data-testid="company-select"
+              className="input-field"
+              value={formData.company_id}
+              onChange={(e) => handleChange('company_id', e.target.value)}
+              required
+              disabled={initialData}
+            >
+              <option value="">Choose a company...</option>
+              {companies.map((company) => (
+                <option key={company.company_id} value={company.company_id}>
+                  {company.company_name} (Prefix: {company.prefix})
+                </option>
+              ))}
+            </select>
+            {selectedCompany && (
+              <p className="text-sm text-blue-900 mt-2">
+                <strong>Employee ID Format:</strong> {selectedCompany.prefix}XXX (e.g., {selectedCompany.prefix}001, {selectedCompany.prefix}002)
+              </p>
+            )}
+          </div>
+
           <Tabs defaultValue="personal" className="w-full">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="personal">Personal</TabsTrigger>
