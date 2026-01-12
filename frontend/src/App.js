@@ -1,53 +1,94 @@
-import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from '@/components/ui/sonner';
+import '@/App.css';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+// Pages
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import AdminDashboard from '@/pages/AdminDashboard';
+import EmployeeDashboard from '@/pages/EmployeeDashboard';
+import EmployeeList from '@/pages/EmployeeList';
+import EmployeeDetails from '@/pages/EmployeeDetails';
+import DocumentManagement from '@/pages/DocumentManagement';
+import ContractManagement from '@/pages/ContractManagement';
+import SignContract from '@/pages/SignContract';
+import ActivityLogs from '@/pages/ActivityLogs';
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
+// Auth context
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
+const PrivateRoute = ({ children, adminOnly = false }) => {
+  const { user, loading } = useAuth();
 
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (adminOnly && user.role !== 'admin') {
+    return <Navigate to="/employee-dashboard" />;
+  }
+
+  return children;
 };
 
 function App() {
   return (
-    <div className="App">
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/sign-contract/:token" element={<SignContract />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin-dashboard" element={
+            <PrivateRoute adminOnly>
+              <AdminDashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/employees" element={
+            <PrivateRoute adminOnly>
+              <EmployeeList />
+            </PrivateRoute>
+          } />
+          <Route path="/employees/:employeeId" element={
+            <PrivateRoute adminOnly>
+              <EmployeeDetails />
+            </PrivateRoute>
+          } />
+          <Route path="/contracts" element={
+            <PrivateRoute adminOnly>
+              <ContractManagement />
+            </PrivateRoute>
+          } />
+          <Route path="/activity-logs" element={
+            <PrivateRoute adminOnly>
+              <ActivityLogs />
+            </PrivateRoute>
+          } />
+          
+          {/* Employee Routes */}
+          <Route path="/employee-dashboard" element={
+            <PrivateRoute>
+              <EmployeeDashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/my-documents" element={
+            <PrivateRoute>
+              <DocumentManagement />
+            </PrivateRoute>
+          } />
+          
+          <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
+        <Toaster position="top-right" />
       </BrowserRouter>
-    </div>
+    </AuthProvider>
   );
 }
 
