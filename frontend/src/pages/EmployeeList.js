@@ -24,9 +24,11 @@ const EmployeeList = () => {
 
   useEffect(() => {
     const filtered = employees.filter(emp =>
-      emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.department.toLowerCase().includes(searchTerm.toLowerCase())
+      (emp.full_name && emp.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (emp.first_name && emp.first_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (emp.last_name && emp.last_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (emp.employee_number && emp.employee_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (emp.department && emp.department.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     setFilteredEmployees(filtered);
   }, [searchTerm, employees]);
