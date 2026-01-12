@@ -54,8 +54,29 @@ const EmployeeFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
     manager_id: ''
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      fetchCompanies();
+    }
+  }, [isOpen]);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(`${API}/companies`);
+      setCompanies(response.data.filter(c => c.status === 'active'));
+    } catch (error) {
+      toast.error('Failed to load companies');
+    }
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Update selected company when company_id changes
+    if (field === 'company_id') {
+      const company = companies.find(c => c.company_id === value);
+      setSelectedCompany(company);
+    }
   };
 
   const handleSubmit = async (e) => {
