@@ -380,7 +380,8 @@ async def register(user: UserRegister):
     await send_email_async(user.email, "Welcome to Nexus HR", welcome_html)
     
     access_token = create_access_token(data={"sub": user_id})
-    user_data = {k: v for k, v in user_doc.items() if k != "password_hash"}
+    # Exclude _id and password_hash from response
+    user_data = {k: v for k, v in user_doc.items() if k not in ["password_hash", "_id"]}
     
     return {
         "access_token": access_token,
