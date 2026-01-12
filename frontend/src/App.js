@@ -84,6 +84,11 @@ function App() {
               <LeaveApprovals />
             </PrivateRoute>
           } />
+          <Route path="/attendance-verification" element={
+            <PrivateRoute>
+              <AttendanceVerification />
+            </PrivateRoute>
+          } />
           
           {/* Employee Routes */}
           <Route path="/employee-dashboard" element={
