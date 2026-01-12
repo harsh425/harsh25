@@ -9,7 +9,9 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [contractStats, setContractStats] = useState(null);
+  const [expiringDocs, setExpiringDocs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sendingReminders, setSendingReminders] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -17,16 +19,31 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const [dashboardRes, contractRes] = await Promise.all([
+      const [dashboardRes, contractRes, expiringRes] = await Promise.all([
         axios.get(`${API}/dashboard/stats`),
-        axios.get(`${API}/contracts/stats`)
+        axios.get(`${API}/contracts/stats`),
+        axios.get(`${API}/documents/expiring-soon?days=30`)
       ]);
       setStats(dashboardRes.data);
       setContractStats(contractRes.data);
+      setExpiringDocs(expiringRes.data);
     } catch (error) {
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendReminders = async () => {
+    setSendingReminders(true);
+    try {
+      const response = await axios.post(`${API}/documents/send-expiry-reminders`);
+      toast.success(response.data.message);
+      fetchStats(); // Refresh data
+    } catch (error) {
+      toast.error('Failed to send reminders');
+    } finally {
+      setSendingReminders(false);
     }
   };
 
