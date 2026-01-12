@@ -181,6 +181,18 @@ class LeaveApproval(BaseModel):
     status: str  # "approved", "rejected"
     comments: Optional[str] = None
 
+class AttendanceCheckIn(BaseModel):
+    latitude: float
+    longitude: float
+
+class AttendanceCheckOut(BaseModel):
+    latitude: float
+    longitude: float
+
+class AttendanceVerification(BaseModel):
+    status: str  # "verified", "flagged"
+    comments: Optional[str] = None
+
 
 # ============ HELPER FUNCTIONS ============
 
