@@ -16,6 +16,8 @@ import DocumentManagement from '@/pages/DocumentManagement';
 import ContractManagement from '@/pages/ContractManagement';
 import SignContract from '@/pages/SignContract';
 import ActivityLogs from '@/pages/ActivityLogs';
+import LeaveManagement from '@/pages/LeaveManagement';
+import LeaveApprovals from '@/pages/LeaveApprovals';
 
 // Auth context
 import { AuthProvider, useAuth } from '@/context/AuthContext';
