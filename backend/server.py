@@ -278,6 +278,28 @@ def calculate_working_days(start_date_str: str, end_date_str: str) -> int:
     
     return working_days
 
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """Calculate distance between two coordinates in meters using Haversine formula"""
+    R = 6371000  # Earth radius in meters
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    
+    a = math.sin(delta_phi/2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    
+    return R * c
+
+def is_within_geofence(lat, lon):
+    """Check if coordinates are within office geofence"""
+    distance = calculate_distance(
+        lat, lon,
+        OFFICE_LOCATION["latitude"],
+        OFFICE_LOCATION["longitude"]
+    )
+    return distance <= OFFICE_LOCATION["radius_meters"], distance
+
 
 # ============ AUTHENTICATION ROUTES ============
 
