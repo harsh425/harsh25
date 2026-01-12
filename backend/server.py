@@ -63,16 +63,44 @@ class TokenResponse(BaseModel):
     user: dict
 
 class EmployeeCreate(BaseModel):
-    employee_id: str
-    full_name: str
+    # Personal Info
+    first_name: str
+    last_name: str
+    employee_number: str
+    date_of_birth: str
+    gender: str
+    marital_status: str
+    
+    # Contact Information
     email: EmailStr
+    phone_number: str
+    mpesa_number: str
+    
+    # Statutory Information
+    kra_pin: str
+    nssf_number: str
+    shif_number: str
+    
+    # Emergency Contact
+    emergency_contact_name: str
+    emergency_contact_phone: str
+    emergency_contact_relationship: str
+    emergency_contact_email: EmailStr
+    
+    # Bank Information
+    bank_account_name: str
+    bank_name: str
+    bank_branch_name: str
+    bank_branch_code: str
+    bank_account_number: str
+    
+    # Employment Details
     department: str
     position: str
     employment_type: str
     contract_start_date: str
     contract_end_date: Optional[str] = None
-    phone: str
-    emergency_contact: str
+    manager_id: Optional[str] = None
 
 class EmployeeUpdate(BaseModel):
     full_name: Optional[str] = None
