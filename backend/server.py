@@ -26,6 +26,7 @@ from routes.reports import router as reports_router
 from routes.contracts import router as contracts_router
 from routes.documents import router as documents_router
 from routes.dashboard import router as dashboard_router
+from routes.payroll import router as payroll_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -45,6 +46,7 @@ app.include_router(reports_router, prefix="/api")
 app.include_router(contracts_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(payroll_router, prefix="/api")
 
 # Add CORS middleware
 app.add_middleware(
