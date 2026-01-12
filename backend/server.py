@@ -102,6 +102,16 @@ class EmailSendRequest(BaseModel):
     subject: str
     html_content: str
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
+
+class BulkEmployeeImport(BaseModel):
+    employees: List[EmployeeCreate]
+
 
 # ============ HELPER FUNCTIONS ============
 
