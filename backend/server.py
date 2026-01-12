@@ -176,6 +176,28 @@ class PasswordResetConfirm(BaseModel):
     token: str
     new_password: str
 
+class CompanyCreate(BaseModel):
+    company_name: str
+    prefix: str  # e.g., "INT"
+    contact_email: EmailStr
+    phone_number: str
+    address: Optional[str] = None
+    registration_number: Optional[str] = None
+
+class CompanyUpdate(BaseModel):
+    company_name: Optional[str] = None
+    prefix: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+    registration_number: Optional[str] = None
+    status: Optional[str] = None
+
+class EmployeeTransfer(BaseModel):
+    to_company_id: str
+    transfer_date: str
+    reason: str
+
 class BulkEmployeeImport(BaseModel):
     employees: List[EmployeeCreate]
 
