@@ -5,11 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const EmployeeFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [formData, setFormData] = useState(initialData || {
+    // Company Assignment
+    company_id: '',
+    
     // Personal Info
+    employee_number: '',
     first_name: '',
     last_name: '',
-    employee_number: '',
     date_of_birth: '',
     gender: '',
     marital_status: '',
