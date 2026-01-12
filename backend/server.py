@@ -103,15 +103,32 @@ class EmployeeCreate(BaseModel):
     manager_id: Optional[str] = None
 
 class EmployeeUpdate(BaseModel):
-    full_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    marital_status: Optional[str] = None
     email: Optional[EmailStr] = None
+    phone_number: Optional[str] = None
+    mpesa_number: Optional[str] = None
+    kra_pin: Optional[str] = None
+    nssf_number: Optional[str] = None
+    shif_number: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    emergency_contact_relationship: Optional[str] = None
+    emergency_contact_email: Optional[EmailStr] = None
+    bank_account_name: Optional[str] = None
+    bank_name: Optional[str] = None
+    bank_branch_name: Optional[str] = None
+    bank_branch_code: Optional[str] = None
+    bank_account_number: Optional[str] = None
     department: Optional[str] = None
     position: Optional[str] = None
     employment_type: Optional[str] = None
     contract_start_date: Optional[str] = None
     contract_end_date: Optional[str] = None
-    phone: Optional[str] = None
-    emergency_contact: Optional[str] = None
+    manager_id: Optional[str] = None
     status: Optional[str] = None
 
 class ContractCreate(BaseModel):
