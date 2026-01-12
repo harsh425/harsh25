@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import AdminLayout from '@/components/AdminLayout';
 import BulkImportModal from '@/components/BulkImportModal';
+import EmployeeFormModal from '@/components/EmployeeFormModal';
 import { Plus, Search, Eye, CheckCircle, XCircle, Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
