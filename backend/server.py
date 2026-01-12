@@ -681,6 +681,355 @@ async def send_expiry_reminders(current_user: dict = Depends(get_current_user)):
     return {"message": f"Sent {reminder_count} expiry reminders"}
 
 
+# ============ LEAVE MANAGEMENT ROUTES ============
+
+@api_router.post("/leave/request")
+async def create_leave_request(leave_req: LeaveRequest, current_user: dict = Depends(get_current_user)):
+    # Get employee record
+    employee = await db.employees.find_one({"email": current_user["email"]}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee record not found")
+    
+    # Calculate working days
+    days_requested = calculate_working_days(leave_req.start_date, leave_req.end_date)
+    
+    if days_requested <= 0:
+        raise HTTPException(status_code=400, detail="Invalid date range")
+    
+    # Check leave balance for annual leave
+    if leave_req.leave_type == "Annual":
+        if employee.get("leave_balance", {}).get("annual", 0) < days_requested:
+            raise HTTPException(status_code=400, detail="Insufficient annual leave balance")
+    
+    # Determine approval workflow
+    # Manager approval required for all leave types
+    # HR Admin approval required after manager
+    # Director approval required if > 14 days
+    approval_levels = ["manager"]
+    if employee.get("manager_id"):
+        approval_levels.append("hr_admin")
+        if days_requested > 14:
+            approval_levels.append("director")
+    else:
+        # No manager assigned, go directly to HR
+        approval_levels = ["hr_admin"]
+        if days_requested > 14:
+            approval_levels.append("director")
+    
+    leave_id = str(uuid.uuid4())
+    leave_doc = {
+        "leave_id": leave_id,
+        "employee_number": employee["employee_number"],
+        "employee_name": employee.get("full_name", f"{employee.get('first_name', '')} {employee.get('last_name', '')}"),
+        "leave_type": leave_req.leave_type,
+        "start_date": leave_req.start_date,
+        "end_date": leave_req.end_date,
+        "days_requested": days_requested,
+        "reason": leave_req.reason,
+        "status": "pending",
+        "current_approval_level": approval_levels[0],
+        "approval_levels": approval_levels,
+        "approval_history": [],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": current_user["user_id"]
+    }
+    
+    await db.leave_requests.insert_one(leave_doc)
+    await log_activity(current_user["user_id"], "leave_request_created", f"Leave request {leave_id} created")
+    
+    # Send notification to manager/HR
+    if employee.get("manager_id"):
+        manager = await db.users.find_one({"user_id": employee["manager_id"]}, {"_id": 0})
+        if manager:
+            email_html = f"""
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>New Leave Request</h2>
+                <p>Hello {manager['full_name']},</p>
+                <p>{employee.get('full_name', 'An employee')} has requested leave:</p>
+                <ul>
+                    <li><strong>Type:</strong> {leave_req.leave_type}</li>
+                    <li><strong>Period:</strong> {leave_req.start_date} to {leave_req.end_date}</li>
+                    <li><strong>Days:</strong> {days_requested}</li>
+                    <li><strong>Reason:</strong> {leave_req.reason}</li>
+                </ul>
+                <p>Please review and approve/reject this request.</p>
+            </div>
+            """
+            await send_email_async(manager["email"], "New Leave Request Pending Approval", email_html)
+    
+    return {
+        "message": "Leave request submitted successfully",
+        "leave_id": leave_id,
+        "days_requested": days_requested
+    }
+
+@api_router.get("/leave/my-requests")
+async def get_my_leave_requests(current_user: dict = Depends(get_current_user)):
+    employee = await db.employees.find_one({"email": current_user["email"]}, {"_id": 0})
+    if not employee:
+        return []
+    
+    requests = await db.leave_requests.find(
+        {"employee_number": employee["employee_number"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return requests
+
+@api_router.get("/leave/pending-approvals")
+async def get_pending_approvals(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["manager", "admin", "hr_assistant", "director"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build query based on role
+    if current_user["role"] == "manager":
+        # Get leave requests for team members
+        team_members = await db.employees.find({"manager_id": current_user["user_id"]}, {"_id": 0}).to_list(1000)
+        employee_numbers = [emp["employee_number"] for emp in team_members]
+        
+        requests = await db.leave_requests.find({
+            "employee_number": {"$in": employee_numbers},
+            "status": "pending",
+            "current_approval_level": "manager"
+        }, {"_id": 0}).to_list(100)
+        
+    elif current_user["role"] in ["admin", "hr_assistant"]:
+        # HR sees all requests at hr_admin level
+        requests = await db.leave_requests.find({
+            "status": "pending",
+            "current_approval_level": "hr_admin"
+        }, {"_id": 0}).to_list(100)
+        
+    elif current_user["role"] == "director":
+        # Directors see requests requiring director approval
+        requests = await db.leave_requests.find({
+            "status": "pending",
+            "current_approval_level": "director"
+        }, {"_id": 0}).to_list(100)
+    else:
+        requests = []
+    
+    return requests
+
+@api_router.post("/leave/{leave_id}/approve")
+async def approve_leave(leave_id: str, approval: LeaveApproval, current_user: dict = Depends(get_current_user)):
+    leave = await db.leave_requests.find_one({"leave_id": leave_id}, {"_id": 0})
+    if not leave:
+        raise HTTPException(status_code=404, detail="Leave request not found")
+    
+    if leave["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Leave request is not pending")
+    
+    # Verify user has permission to approve at this level
+    current_level = leave["current_approval_level"]
+    if current_level == "manager" and current_user["role"] != "manager":
+        raise HTTPException(status_code=403, detail="Only managers can approve at this level")
+    elif current_level == "hr_admin" and current_user["role"] not in ["admin", "hr_assistant"]:
+        raise HTTPException(status_code=403, detail="Only HR can approve at this level")
+    elif current_level == "director" and current_user["role"] != "director":
+        raise HTTPException(status_code=403, detail="Only directors can approve at this level")
+    
+    # Add to approval history
+    approval_entry = {
+        "level": current_level,
+        "approver_name": current_user["full_name"],
+        "approver_id": current_user["user_id"],
+        "status": approval.status,
+        "comments": approval.comments,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Update leave request
+    approval_levels = leave["approval_levels"]
+    current_index = approval_levels.index(current_level)
+    
+    if approval.status == "rejected":
+        # Rejection at any level = rejected
+        await db.leave_requests.update_one(
+            {"leave_id": leave_id},
+            {
+                "$set": {
+                    "status": "rejected",
+                    "rejection_reason": approval.comments
+                },
+                "$push": {"approval_history": approval_entry}
+            }
+        )
+        
+        # Notify employee
+        employee = await db.employees.find_one({"employee_number": leave["employee_number"]}, {"_id": 0})
+        if employee:
+            email_html = f"""
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>Leave Request Rejected</h2>
+                <p>Hello {employee.get('full_name', 'Employee')},</p>
+                <p>Your leave request has been rejected by {current_user['full_name']} ({current_level}).</p>
+                <p><strong>Reason:</strong> {approval.comments or 'No reason provided'}</p>
+                <p><strong>Leave Details:</strong></p>
+                <ul>
+                    <li>Type: {leave['leave_type']}</li>
+                    <li>Period: {leave['start_date']} to {leave['end_date']}</li>
+                </ul>
+            </div>
+            """
+            await send_email_async(employee["email"], "Leave Request Rejected", email_html)
+        
+        await log_activity(current_user["user_id"], "leave_rejected", f"Rejected leave {leave_id}")
+        return {"message": "Leave request rejected"}
+        
+    else:
+        # Approved at this level
+        if current_index < len(approval_levels) - 1:
+            # Move to next approval level
+            next_level = approval_levels[current_index + 1]
+            await db.leave_requests.update_one(
+                {"leave_id": leave_id},
+                {
+                    "$set": {"current_approval_level": next_level},
+                    "$push": {"approval_history": approval_entry}
+                }
+            )
+            
+            # Notify next approver
+            # Find users with the next approval role
+            if next_level == "hr_admin":
+                hr_users = await db.users.find({"role": {"$in": ["admin", "hr_assistant"]}}, {"_id": 0}).to_list(10)
+                for hr_user in hr_users[:1]:  # Notify first HR user
+                    email_html = f"""
+                    <div style="font-family: Arial, sans-serif; padding: 20px;">
+                        <h2>Leave Request Awaiting Your Approval</h2>
+                        <p>Hello {hr_user['full_name']},</p>
+                        <p>A leave request has been approved by the manager and now requires HR approval:</p>
+                        <ul>
+                            <li><strong>Employee:</strong> {leave['employee_name']}</li>
+                            <li><strong>Type:</strong> {leave['leave_type']}</li>
+                            <li><strong>Period:</strong> {leave['start_date']} to {leave['end_date']}</li>
+                            <li><strong>Days:</strong> {leave['days_requested']}</li>
+                        </ul>
+                    </div>
+                    """
+                    await send_email_async(hr_user["email"], "Leave Request Awaiting HR Approval", email_html)
+            
+            await log_activity(current_user["user_id"], "leave_approved_partial", f"Approved leave {leave_id} at {current_level}")
+            return {"message": f"Leave approved at {current_level}. Moving to {next_level} approval."}
+            
+        else:
+            # Final approval - update leave balance and mark as approved
+            await db.leave_requests.update_one(
+                {"leave_id": leave_id},
+                {
+                    "$set": {"status": "approved"},
+                    "$push": {"approval_history": approval_entry}
+                }
+            )
+            
+            # Deduct from leave balance if Annual leave
+            if leave["leave_type"] == "Annual":
+                await db.employees.update_one(
+                    {"employee_number": leave["employee_number"]},
+                    {"$inc": {"leave_balance.annual": -leave["days_requested"]}}
+                )
+            
+            # Notify employee
+            employee = await db.employees.find_one({"employee_number": leave["employee_number"]}, {"_id": 0})
+            if employee:
+                email_html = f"""
+                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2 style="color: #10B981;">Leave Request Approved!</h2>
+                    <p>Hello {employee.get('full_name', 'Employee')},</p>
+                    <p>Great news! Your leave request has been fully approved.</p>
+                    <p><strong>Leave Details:</strong></p>
+                    <ul>
+                        <li>Type: {leave['leave_type']}</li>
+                        <li>Period: {leave['start_date']} to {leave['end_date']}</li>
+                        <li>Days: {leave['days_requested']}</li>
+                    </ul>
+                    <p>Have a great time off!</p>
+                </div>
+                """
+                await send_email_async(employee["email"], "Leave Request Approved", email_html)
+            
+            await log_activity(current_user["user_id"], "leave_approved_final", f"Fully approved leave {leave_id}")
+            return {"message": "Leave request fully approved"}
+
+@api_router.get("/leave/balance")
+async def get_leave_balance(current_user: dict = Depends(get_current_user)):
+    employee = await db.employees.find_one({"email": current_user["email"]}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee record not found")
+    
+    balance = employee.get("leave_balance", {
+        "annual": 21,
+        "sick": 30,
+        "maternity": 0,
+        "paternity": 0
+    })
+    
+    # Calculate used leave this year
+    year_start = f"{datetime.now().year}-01-01"
+    approved_leaves = await db.leave_requests.find({
+        "employee_number": employee["employee_number"],
+        "status": "approved",
+        "start_date": {"$gte": year_start}
+    }, {"_id": 0}).to_list(100)
+    
+    used = {
+        "annual": 0,
+        "sick": 0,
+        "maternity": 0,
+        "paternity": 0
+    }
+    
+    for leave in approved_leaves:
+        leave_type_key = leave["leave_type"].lower()
+        if leave_type_key in used:
+            used[leave_type_key] += leave["days_requested"]
+    
+    return {
+        "balance": balance,
+        "used": used,
+        "available": {
+            "annual": balance.get("annual", 21) - used["annual"],
+            "sick": balance.get("sick", 30) - used["sick"]
+        }
+    }
+
+@api_router.get("/leave/team-calendar")
+async def get_team_leave_calendar(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["manager", "admin", "hr_assistant", "director"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get approved leave requests for the next 3 months
+    today = datetime.now().date()
+    three_months = (today + timedelta(days=90)).isoformat()
+    
+    if current_user["role"] == "manager":
+        # Get team members
+        team_members = await db.employees.find({"manager_id": current_user["user_id"]}, {"_id": 0}).to_list(1000)
+        employee_numbers = [emp["employee_number"] for emp in team_members]
+        
+        leaves = await db.leave_requests.find({
+            "employee_number": {"$in": employee_numbers},
+            "status": "approved",
+            "start_date": {"$lte": three_months}
+        }, {"_id": 0}).to_list(1000)
+    else:
+        # HR/Directors see all
+        leaves = await db.leave_requests.find({
+            "status": "approved",
+            "start_date": {"$lte": three_months}
+        }, {"_id": 0}).to_list(1000)
+    
+    return leaves
+
+@api_router.get("/leave/holidays")
+async def get_kenyan_holidays():
+    return {
+        "holidays": KENYAN_HOLIDAYS_2025,
+        "year": 2025
+    }
+
+
 # ============ CONTRACT MANAGEMENT ROUTES ============
 
 @api_router.post("/contracts")
