@@ -132,6 +132,22 @@ const EmployeeFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
             <TabsContent value="personal" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label className="label">Employee Number *</label>
+                  <input
+                    type="text"
+                    data-testid="employee-number-input"
+                    className="input-field mono"
+                    value={formData.employee_number}
+                    onChange={(e) => handleChange('employee_number', e.target.value.toUpperCase())}
+                    required
+                    disabled={initialData}
+                    placeholder={selectedCompany ? `${selectedCompany.prefix}001` : 'Select company first'}
+                  />
+                  {selectedCompany && !formData.employee_number.startsWith(selectedCompany.prefix) && formData.employee_number && (
+                    <p className="text-xs text-red-600 mt-1">Must start with {selectedCompany.prefix}</p>
+                  )}
+                </div>
+                <div>
                   <label className="label">First Name *</label>
                   <input
                     type="text"
@@ -142,6 +158,9 @@ const EmployeeFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
                     required
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Last Name *</label>
                   <input
@@ -151,21 +170,6 @@ const EmployeeFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) =
                     value={formData.last_name}
                     onChange={(e) => handleChange('last_name', e.target.value)}
                     required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Employee Number *</label>
-                  <input
-                    type="text"
-                    data-testid="employee-number-input"
-                    className="input-field"
-                    value={formData.employee_number}
-                    onChange={(e) => handleChange('employee_number', e.target.value)}
-                    required
-                    disabled={initialData}
                   />
                 </div>
                 <div>
