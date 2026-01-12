@@ -17,18 +17,6 @@ const EmployeeList = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    employee_id: '',
-    full_name: '',
-    email: '',
-    department: '',
-    position: '',
-    employment_type: 'Full-time',
-    contract_start_date: '',
-    contract_end_date: '',
-    phone: '',
-    emergency_contact: ''
-  });
 
   useEffect(() => {
     fetchEmployees();
