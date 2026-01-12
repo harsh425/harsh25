@@ -99,14 +99,24 @@ const EmployeeList = () => {
             <h1 className="text-4xl font-bold text-slate-900 mb-2">Employees</h1>
             <p className="text-slate-600">Manage your workforce</p>
           </div>
-          <Button
-            data-testid="add-employee-button"
-            onClick={() => setShowAddModal(true)}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Add Employee
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              data-testid="bulk-import-button"
+              onClick={() => setShowBulkImportModal(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-sm flex items-center gap-2 transition"
+            >
+              <Upload className="w-5 h-5" />
+              Bulk Import
+            </Button>
+            <Button
+              data-testid="add-employee-button"
+              onClick={() => setShowAddModal(true)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Add Employee
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
