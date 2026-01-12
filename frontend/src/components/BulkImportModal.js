@@ -241,16 +241,49 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
 
           {/* Required Fields Info */}
           <div className="bg-slate-50 border border-slate-200 rounded-sm p-4">
-            <h4 className="font-semibold mb-2 text-sm">Required Fields</h4>
-            <ul className="text-xs text-slate-600 space-y-1">
-              <li>• employee_id (unique)</li>
-              <li>• full_name</li>
-              <li>• email (valid email format)</li>
-              <li>• department</li>
-              <li>• position</li>
-              <li>• phone</li>
-              <li>• emergency_contact</li>
-            </ul>
+            <h4 className="font-semibold mb-2 text-sm">Required Fields (26 total)</h4>
+            <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+              <div>
+                <p className="font-semibold text-slate-700 mt-2">Personal:</p>
+                <ul className="space-y-1">
+                  <li>• employee_number</li>
+                  <li>• first_name, last_name</li>
+                  <li>• date_of_birth, gender</li>
+                  <li>• marital_status</li>
+                </ul>
+                <p className="font-semibold text-slate-700 mt-2">Contact:</p>
+                <ul className="space-y-1">
+                  <li>• email, phone_number</li>
+                  <li>• mpesa_number</li>
+                </ul>
+                <p className="font-semibold text-slate-700 mt-2">Statutory:</p>
+                <ul className="space-y-1">
+                  <li>• kra_pin, nssf_number</li>
+                  <li>• shif_number</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-700 mt-2">Emergency:</p>
+                <ul className="space-y-1">
+                  <li>• emergency_contact_name</li>
+                  <li>• emergency_contact_phone</li>
+                  <li>• emergency_contact_relationship</li>
+                  <li>• emergency_contact_email</li>
+                </ul>
+                <p className="font-semibold text-slate-700 mt-2">Bank:</p>
+                <ul className="space-y-1">
+                  <li>• bank_account_name</li>
+                  <li>• bank_name, bank_branch_name</li>
+                  <li>• bank_branch_code</li>
+                  <li>• bank_account_number</li>
+                </ul>
+                <p className="font-semibold text-slate-700 mt-2">Employment:</p>
+                <ul className="space-y-1">
+                  <li>• department, position</li>
+                  <li>• contract_start_date</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
