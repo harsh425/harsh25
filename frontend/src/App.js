@@ -20,6 +20,7 @@ import LeaveManagement from '@/pages/LeaveManagement';
 import LeaveApprovals from '@/pages/LeaveApprovals';
 import AttendancePage from '@/pages/AttendancePage';
 import AttendanceVerification from '@/pages/AttendanceVerification';
+import CompanyManagement from '@/pages/CompanyManagement';
 
 // Auth context
 import { AuthProvider, useAuth } from '@/context/AuthContext';
