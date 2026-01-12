@@ -825,18 +825,38 @@ async def bulk_import_employees(import_data: BulkEmployeeImport, current_user: d
     
     for emp in import_data.employees:
         try:
-            # Check if employee number already exists
-            existing = await db.employees.find_one({"employee_number": emp.employee_number}, {"_id": 0})
+            # Validate company
+            company = await db.companies.find_one({"company_id": emp.company_id}, {"_id": 0})
+            if not company:
+                failed_count += 1
+                errors.append(f"Employee {emp.employee_number}: Company not found")
+                continue
+            
+            # Validate prefix
+            if not emp.employee_number.upper().startswith(company["prefix"]):
+                failed_count += 1
+                errors.append(f"Employee {emp.employee_number}: Must start with prefix '{company['prefix']}'")
+                continue
+            
+            # Check duplicate for active employees
+            existing = await db.employees.find_one({
+                "employee_number": emp.employee_number.upper(),
+                "status": {"$in": ["active", "on_leave"]}
+            }, {"_id": 0})
+            
             if existing:
                 failed_count += 1
-                errors.append(f"Employee number {emp.employee_number} already exists")
+                errors.append(f"Employee {emp.employee_number.upper()}: Already exists (active)")
                 continue
             
             emp_doc = emp.model_dump()
+            emp_doc["employee_number"] = emp.employee_number.upper()
+            emp_doc["company_name"] = company["company_name"]
             emp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
             emp_doc["status"] = "active"
             emp_doc["created_by"] = current_user["user_id"]
             emp_doc["full_name"] = f"{emp.first_name} {emp.last_name}"
+            emp_doc["transfer_history"] = []
             
             # Initialize leave balances
             emp_doc["leave_balance"] = {
@@ -851,7 +871,7 @@ async def bulk_import_employees(import_data: BulkEmployeeImport, current_user: d
             
         except Exception as e:
             failed_count += 1
-            errors.append(f"Failed to import {emp.employee_number}: {str(e)}")
+            errors.append(f"Employee {emp.employee_number}: {str(e)}")
     
     await log_activity(current_user["user_id"], "bulk_import", f"Imported {success_count} employees, {failed_count} failed")
     
