@@ -45,34 +45,21 @@ const EmployeeList = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (formData) => {
     try {
       await axios.post(`${API}/employees`, formData);
       toast.success('Employee created successfully');
       setShowAddModal(false);
       fetchEmployees();
-      setFormData({
-        employee_id: '',
-        full_name: '',
-        email: '',
-        department: '',
-        position: '',
-        employment_type: 'Full-time',
-        contract_start_date: '',
-        contract_end_date: '',
-        phone: '',
-        emergency_contact: ''
-      });
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create employee');
     }
   };
 
-  const handleDeactivate = async (employeeId) => {
+  const handleDeactivate = async (employeeNumber) => {
     if (window.confirm('Are you sure you want to deactivate this employee?')) {
       try {
-        await axios.delete(`${API}/employees/${employeeId}`);
+        await axios.delete(`${API}/employees/${employeeNumber}`);
         toast.success('Employee deactivated');
         fetchEmployees();
       } catch (error) {
