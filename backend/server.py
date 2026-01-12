@@ -412,15 +412,16 @@ async def get_all_employees(current_user: dict = Depends(get_current_user)):
     
     return employees
 
-@api_router.get("/employees/{employee_id}")
-async def get_employee(employee_id: str, current_user: dict = Depends(get_current_user)):
-    employee = await db.employees.find_one({"employee_id": employee_id}, {"_id": 0})
+@api_router.get("/employees/{employee_number}")
+async def get_employee(employee_number: str, current_user: dict = Depends(get_current_user)):
+    employee = await db.employees.find_one({"employee_number": employee_number}, {"_id": 0})
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
     
     # Check permissions
-    if current_user["role"] != "admin" and employee["email"] != current_user["email"]:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if current_user["role"] not in ["admin", "hr_assistant", "director", "manager"]:
+        if employee["email"] != current_user["email"]:
+            raise HTTPException(status_code=403, detail="Access denied")
     
     return employee
 
