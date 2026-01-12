@@ -471,8 +471,8 @@ async def deactivate_employee(employee_number: str, current_user: dict = Depends
 
 @api_router.post("/employees/bulk-import")
 async def bulk_import_employees(import_data: BulkEmployeeImport, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can import employees")
+    if current_user["role"] not in ["admin", "hr_assistant"]:
+        raise HTTPException(status_code=403, detail="Only admins and HR assistants can import employees")
     
     success_count = 0
     failed_count = 0
@@ -480,24 +480,33 @@ async def bulk_import_employees(import_data: BulkEmployeeImport, current_user: d
     
     for emp in import_data.employees:
         try:
-            # Check if employee ID already exists
-            existing = await db.employees.find_one({"employee_id": emp.employee_id}, {"_id": 0})
+            # Check if employee number already exists
+            existing = await db.employees.find_one({"employee_number": emp.employee_number}, {"_id": 0})
             if existing:
                 failed_count += 1
-                errors.append(f"Employee ID {emp.employee_id} already exists")
+                errors.append(f"Employee number {emp.employee_number} already exists")
                 continue
             
             emp_doc = emp.model_dump()
             emp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
             emp_doc["status"] = "active"
             emp_doc["created_by"] = current_user["user_id"]
+            emp_doc["full_name"] = f"{emp.first_name} {emp.last_name}"
+            
+            # Initialize leave balances
+            emp_doc["leave_balance"] = {
+                "annual": 21,
+                "sick": 30,
+                "maternity": 0,
+                "paternity": 0
+            }
             
             await db.employees.insert_one(emp_doc)
             success_count += 1
             
         except Exception as e:
             failed_count += 1
-            errors.append(f"Failed to import {emp.employee_id}: {str(e)}")
+            errors.append(f"Failed to import {emp.employee_number}: {str(e)}")
     
     await log_activity(current_user["user_id"], "bulk_import", f"Imported {success_count} employees, {failed_count} failed")
     
