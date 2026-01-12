@@ -831,6 +831,286 @@ async def get_employee_transfers(employee_number: str, current_user: dict = Depe
     return transfers
 
 
+# ============ PERFORMANCE TRACKING ROUTES ============
+
+@api_router.post("/performance/reviews")
+async def create_performance_review(review: PerformanceReview, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "hr_assistant", "manager"]:
+        raise HTTPException(status_code=403, detail="Only managers and HR can create reviews")
+    
+    # Get employee
+    employee = await db.employees.find_one({"employee_number": review.employee_number}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    # Verify manager can review this employee
+    if current_user["role"] == "manager" and employee.get("manager_id") != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="You can only review your direct reports")
+    
+    review_id = str(uuid.uuid4())
+    review_doc = {
+        "review_id": review_id,
+        "employee_number": review.employee_number,
+        "employee_name": employee.get("full_name", f"{employee.get('first_name', '')} {employee.get('last_name', '')}"),
+        "company_id": employee.get("company_id"),
+        "company_name": employee.get("company_name"),
+        "review_period_start": review.review_period_start,
+        "review_period_end": review.review_period_end,
+        "overall_rating": review.overall_rating,
+        "goals_achieved": review.goals_achieved,
+        "strengths": review.strengths,
+        "areas_for_improvement": review.areas_for_improvement,
+        "comments": review.comments,
+        "reviewer_name": current_user["full_name"],
+        "reviewer_id": current_user["user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.performance_reviews.insert_one(review_doc)
+    await log_activity(current_user["user_id"], "performance_review_created", f"Created review for {review.employee_number}")
+    
+    # Send notification to employee
+    if employee.get("email"):
+        email_html = f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>Performance Review Completed</h2>
+            <p>Dear {employee.get('first_name')},</p>
+            <p>Your performance review for the period {review.review_period_start} to {review.review_period_end} has been completed.</p>
+            <p><strong>Overall Rating:</strong> {review.overall_rating}/5</p>
+            <p>Please log in to view the complete review details.</p>
+        </div>
+        """
+        await send_email_async(employee["email"], "Performance Review Completed", email_html)
+    
+    return {"message": "Performance review created successfully", "review_id": review_id}
+
+@api_router.get("/performance/reviews/{employee_number}")
+async def get_employee_reviews(employee_number: str, current_user: dict = Depends(get_current_user)):
+    # Check permissions
+    employee = await db.employees.find_one({"employee_number": employee_number}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    if current_user["role"] not in ["admin", "hr_assistant", "director", "manager"]:
+        if employee.get("email") != current_user["email"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
+    reviews = await db.performance_reviews.find(
+        {"employee_number": employee_number},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return reviews
+
+@api_router.post("/performance/goals")
+async def create_performance_goal(goal: PerformanceGoal, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "hr_assistant", "manager"]:
+        raise HTTPException(status_code=403, detail="Only managers and HR can set goals")
+    
+    employee = await db.employees.find_one({"employee_number": goal.employee_number}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    goal_id = str(uuid.uuid4())
+    goal_doc = {
+        "goal_id": goal_id,
+        "employee_number": goal.employee_number,
+        "employee_name": employee.get("full_name"),
+        "goal_title": goal.goal_title,
+        "goal_description": goal.goal_description,
+        "target_date": goal.target_date,
+        "priority": goal.priority,
+        "status": "in_progress",
+        "set_by": current_user["full_name"],
+        "set_by_id": current_user["user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.performance_goals.insert_one(goal_doc)
+    await log_activity(current_user["user_id"], "goal_created", f"Set goal for {goal.employee_number}")
+    
+    return {"message": "Goal created successfully", "goal_id": goal_id}
+
+@api_router.get("/performance/goals/{employee_number}")
+async def get_employee_goals(employee_number: str, current_user: dict = Depends(get_current_user)):
+    employee = await db.employees.find_one({"employee_number": employee_number}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    if current_user["role"] not in ["admin", "hr_assistant", "director", "manager"]:
+        if employee.get("email") != current_user["email"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
+    goals = await db.performance_goals.find(
+        {"employee_number": employee_number},
+        {"_id": 0}
+    ).to_list(100)
+    
+    return goals
+
+
+# ============ REPORTS & ANALYTICS ROUTES ============
+
+@api_router.get("/reports/company-summary")
+async def get_company_summary(company_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "hr_assistant", "director"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    query = {}
+    if company_id:
+        query["company_id"] = company_id
+    
+    # Employee statistics
+    total_employees = await db.employees.count_documents(query)
+    active_employees = await db.employees.count_documents({**query, "status": "active"})
+    
+    # Department breakdown
+    pipeline = [
+        {"$match": query},
+        {"$group": {"_id": "$department", "count": {"$sum": 1}}}
+    ]
+    dept_breakdown = await db.employees.aggregate(pipeline).to_list(100)
+    
+    # Gender breakdown
+    pipeline = [
+        {"$match": query},
+        {"$group": {"_id": "$gender", "count": {"$sum": 1}}}
+    ]
+    gender_breakdown = await db.employees.aggregate(pipeline).to_list(100)
+    
+    # Recent hires (last 30 days)
+    thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    recent_hires = await db.employees.count_documents({
+        **query,
+        "created_at": {"$gte": thirty_days_ago}
+    })
+    
+    return {
+        "total_employees": total_employees,
+        "active_employees": active_employees,
+        "inactive_employees": total_employees - active_employees,
+        "recent_hires": recent_hires,
+        "department_breakdown": dept_breakdown,
+        "gender_breakdown": gender_breakdown
+    }
+
+@api_router.get("/reports/leave-summary")
+async def get_leave_summary(company_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "hr_assistant", "director", "manager"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get employees for company filter
+    emp_query = {}
+    if company_id:
+        emp_query["company_id"] = company_id
+    
+    employees = await db.employees.find(emp_query, {"employee_number": 1, "_id": 0}).to_list(10000)
+    employee_numbers = [emp["employee_number"] for emp in employees]
+    
+    # Leave statistics
+    leave_query = {"employee_number": {"$in": employee_numbers}} if employee_numbers else {}
+    
+    total_requests = await db.leave_requests.count_documents(leave_query)
+    pending = await db.leave_requests.count_documents({**leave_query, "status": "pending"})
+    approved = await db.leave_requests.count_documents({**leave_query, "status": "approved"})
+    rejected = await db.leave_requests.count_documents({**leave_query, "status": "rejected"})
+    
+    # Leave type breakdown
+    pipeline = [
+        {"$match": leave_query},
+        {"$group": {"_id": "$leave_type", "count": {"$sum": 1}, "total_days": {"$sum": "$days_requested"}}}
+    ]
+    leave_type_breakdown = await db.leave_requests.aggregate(pipeline).to_list(100)
+    
+    return {
+        "total_requests": total_requests,
+        "pending": pending,
+        "approved": approved,
+        "rejected": rejected,
+        "leave_type_breakdown": leave_type_breakdown
+    }
+
+@api_router.get("/reports/attendance-summary")
+async def get_attendance_summary(
+    company_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["role"] not in ["admin", "hr_assistant", "director", "manager"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get employees for company filter
+    emp_query = {}
+    if company_id:
+        emp_query["company_id"] = company_id
+    
+    employees = await db.employees.find(emp_query, {"employee_number": 1, "_id": 0}).to_list(10000)
+    employee_numbers = [emp["employee_number"] for emp in employees]
+    
+    # Attendance query
+    att_query = {"employee_number": {"$in": employee_numbers}} if employee_numbers else {}
+    if start_date:
+        att_query["date"] = {"$gte": start_date}
+    if end_date:
+        if "date" in att_query:
+            att_query["date"]["$lte"] = end_date
+        else:
+            att_query["date"] = {"$lte": end_date}
+    
+    total_records = await db.attendance.count_documents(att_query)
+    late_arrivals = await db.attendance.count_documents({**att_query, "is_late": True})
+    outside_geofence = await db.attendance.count_documents({**att_query, "within_geofence": False})
+    
+    # Average working hours
+    pipeline = [
+        {"$match": {**att_query, "total_hours": {"$ne": None}}},
+        {"$group": {"_id": None, "avg_hours": {"$avg": "$total_hours"}}}
+    ]
+    avg_result = await db.attendance.aggregate(pipeline).to_list(1)
+    avg_hours = round(avg_result[0]["avg_hours"], 2) if avg_result else 0
+    
+    return {
+        "total_records": total_records,
+        "late_arrivals": late_arrivals,
+        "late_percentage": round((late_arrivals / total_records * 100), 2) if total_records > 0 else 0,
+        "outside_geofence": outside_geofence,
+        "average_hours": avg_hours
+    }
+
+@api_router.get("/reports/performance-summary")
+async def get_performance_summary(company_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "hr_assistant", "director"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    query = {}
+    if company_id:
+        query["company_id"] = company_id
+    
+    total_reviews = await db.performance_reviews.count_documents(query)
+    
+    # Average rating
+    pipeline = [
+        {"$match": query},
+        {"$group": {"_id": None, "avg_rating": {"$avg": "$overall_rating"}}}
+    ]
+    avg_result = await db.performance_reviews.aggregate(pipeline).to_list(1)
+    avg_rating = round(avg_result[0]["avg_rating"], 2) if avg_result else 0
+    
+    # Rating distribution
+    pipeline = [
+        {"$match": query},
+        {"$group": {"_id": "$overall_rating", "count": {"$sum": 1}}}
+    ]
+    rating_distribution = await db.performance_reviews.aggregate(pipeline).to_list(100)
+    
+    return {
+        "total_reviews": total_reviews,
+        "average_rating": avg_rating,
+        "rating_distribution": rating_distribution
+    }
+
+
 @api_router.post("/employees/bulk-import")
 async def bulk_import_employees(import_data: BulkEmployeeImport, current_user: dict = Depends(get_current_user)):
     if current_user["role"] not in ["admin", "hr_assistant"]:
