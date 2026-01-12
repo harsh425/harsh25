@@ -38,6 +38,20 @@ security = HTTPBearer()
 resend.api_key = os.environ.get("RESEND_API_KEY", "")
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "onboarding@resend.dev")
 
+# Kenyan Public Holidays 2025
+KENYAN_HOLIDAYS_2025 = [
+    "2025-01-01",  # New Year
+    "2025-04-18",  # Good Friday
+    "2025-04-21",  # Easter Monday
+    "2025-05-01",  # Labour Day
+    "2025-06-01",  # Madaraka Day
+    "2025-10-10",  # Huduma Day
+    "2025-10-20",  # Mashujaa Day
+    "2025-12-12",  # Jamhuri Day
+    "2025-12-25",  # Christmas
+    "2025-12-26",  # Boxing Day
+]
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
