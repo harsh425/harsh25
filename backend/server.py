@@ -444,6 +444,7 @@ async def upload_document(
     employee_id: str,
     category: str,
     file: UploadFile = File(...),
+    expiry_date: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
     # Check permissions
@@ -477,7 +478,9 @@ async def upload_document(
         "file_id": str(file_id),
         "uploaded_by": current_user["user_id"],
         "uploaded_at": datetime.now(timezone.utc).isoformat(),
-        "content_type": file.content_type
+        "content_type": file.content_type,
+        "expiry_date": expiry_date,
+        "expiry_notified": False
     }
     
     await db.documents.insert_one(doc_meta)
