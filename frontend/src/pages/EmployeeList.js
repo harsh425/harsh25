@@ -15,6 +15,7 @@ const EmployeeList = () => {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     employee_id: '',
