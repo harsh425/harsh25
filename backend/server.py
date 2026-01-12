@@ -14,6 +14,7 @@ import uuid
 import base64
 import asyncio
 import resend
+import secrets
 from pathlib import Path
 
 
