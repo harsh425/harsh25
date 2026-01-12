@@ -89,6 +89,14 @@ const AdminLayout = ({ children }) => {
             Payroll Docs
           </NavLink>
           <NavLink
+            to="/payroll"
+            data-testid="nav-payroll"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+          >
+            <DollarSign className="w-5 h-5 mr-3" />
+            Payroll
+          </NavLink>
+          <NavLink
             to="/activity-logs"
             data-testid="nav-activity-logs"
             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
