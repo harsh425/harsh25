@@ -117,7 +117,7 @@ const EmployeeList = () => {
             <table className="w-full grid-border" data-testid="employees-table">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-4 text-left label">Employee ID</th>
+                  <th className="px-6 py-4 text-left label">Employee Number</th>
                   <th className="px-6 py-4 text-left label">Name</th>
                   <th className="px-6 py-4 text-left label">Department</th>
                   <th className="px-6 py-4 text-left label">Position</th>
@@ -136,9 +136,9 @@ const EmployeeList = () => {
                   </tr>
                 ) : (
                   filteredEmployees.map((employee) => (
-                    <tr key={employee.employee_id} className="hover:bg-slate-50 transition" data-testid={`employee-row-${employee.employee_id}`}>
-                      <td className="px-6 py-4 mono">{employee.employee_id}</td>
-                      <td className="px-6 py-4 font-medium">{employee.full_name}</td>
+                    <tr key={employee.employee_number} className="hover:bg-slate-50 transition" data-testid={`employee-row-${employee.employee_number}`}>
+                      <td className="px-6 py-4 mono">{employee.employee_number}</td>
+                      <td className="px-6 py-4 font-medium">{employee.full_name || `${employee.first_name} ${employee.last_name}`}</td>
                       <td className="px-6 py-4">{employee.department}</td>
                       <td className="px-6 py-4">{employee.position}</td>
                       <td className="px-6 py-4">
@@ -155,16 +155,16 @@ const EmployeeList = () => {
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <Link
-                            to={`/employees/${employee.employee_id}`}
-                            data-testid={`view-employee-${employee.employee_id}`}
+                            to={`/employees/${employee.employee_number}`}
+                            data-testid={`view-employee-${employee.employee_number}`}
                             className="text-blue-900 hover:underline flex items-center gap-1"
                           >
                             <Eye className="w-4 h-4" /> View
                           </Link>
                           {employee.status === 'active' && (
                             <button
-                              onClick={() => handleDeactivate(employee.employee_id)}
-                              data-testid={`deactivate-employee-${employee.employee_id}`}
+                              onClick={() => handleDeactivate(employee.employee_number)}
+                              data-testid={`deactivate-employee-${employee.employee_number}`}
                               className="text-red-600 hover:underline"
                             >
                               Deactivate
