@@ -49,6 +49,14 @@ const AdminLayout = ({ children }) => {
             Leave Approvals
           </NavLink>
           <NavLink
+            to="/attendance-verification"
+            data-testid="nav-attendance-verification"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+          >
+            <MapPin className="w-5 h-5 mr-3" />
+            Attendance
+          </NavLink>
+          <NavLink
             to="/activity-logs"
             data-testid="nav-activity-logs"
             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
