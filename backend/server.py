@@ -394,10 +394,20 @@ async def create_employee(employee: EmployeeCreate, current_user: dict = Depends
 
 @api_router.get("/employees")
 async def get_all_employees(current_user: dict = Depends(get_current_user)):
-    if current_user["role"] == "admin":
-        employees = await db.employees.find({}, {"_id": 0}).to_list(1000)
+    if current_user["role"] in ["admin", "hr_assistant", "director", "manager"]:
+        # Admins, HR, Directors, and Managers can see all employees
+        if current_user["role"] == "manager":
+            # Managers see their team + themselves
+            employees = await db.employees.find({
+                "$or": [
+                    {"manager_id": current_user["user_id"]},
+                    {"email": current_user["email"]}
+                ]
+            }, {"_id": 0}).to_list(1000)
+        else:
+            employees = await db.employees.find({}, {"_id": 0}).to_list(1000)
     else:
-        # Employees can only see their own record
+        # Regular employees can only see their own record
         employees = await db.employees.find({"email": current_user["email"]}, {"_id": 0}).to_list(1)
     
     return employees
