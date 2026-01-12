@@ -318,19 +318,19 @@ class TestDocumentsEndpoints:
         assert isinstance(data, list)
         print(f"Found {len(data)} expiring documents")
     
-    def test_02_get_document_categories(self):
-        """Test document categories endpoint"""
+    def test_02_get_all_documents(self):
+        """Test get all documents endpoint"""
         headers = {"Authorization": f"Bearer {TestSetup.token}"}
         
-        response = requests.get(f"{BASE_URL}/api/documents/categories", headers=headers)
+        response = requests.get(f"{BASE_URL}/api/documents", headers=headers)
         
-        print(f"Document categories response status: {response.status_code}")
+        print(f"Get all documents response status: {response.status_code}")
         
-        assert response.status_code == 200, f"Document categories failed: {response.text}"
+        assert response.status_code == 200, f"Get all documents failed: {response.text}"
         
         data = response.json()
         assert isinstance(data, list)
-        print(f"Found {len(data)} document categories")
+        print(f"Found {len(data)} documents")
 
 
 class TestCompanyUpdate:
