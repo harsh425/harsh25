@@ -397,6 +397,46 @@ async def deactivate_employee(employee_id: str, current_user: dict = Depends(get
     return {"message": "Employee deactivated successfully"}
 
 
+@api_router.post("/employees/bulk-import")
+async def bulk_import_employees(import_data: BulkEmployeeImport, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can import employees")
+    
+    success_count = 0
+    failed_count = 0
+    errors = []
+    
+    for emp in import_data.employees:
+        try:
+            # Check if employee ID already exists
+            existing = await db.employees.find_one({"employee_id": emp.employee_id}, {"_id": 0})
+            if existing:
+                failed_count += 1
+                errors.append(f"Employee ID {emp.employee_id} already exists")
+                continue
+            
+            emp_doc = emp.model_dump()
+            emp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
+            emp_doc["status"] = "active"
+            emp_doc["created_by"] = current_user["user_id"]
+            
+            await db.employees.insert_one(emp_doc)
+            success_count += 1
+            
+        except Exception as e:
+            failed_count += 1
+            errors.append(f"Failed to import {emp.employee_id}: {str(e)}")
+    
+    await log_activity(current_user["user_id"], "bulk_import", f"Imported {success_count} employees, {failed_count} failed")
+    
+    return {
+        "message": "Bulk import completed",
+        "success_count": success_count,
+        "failed_count": failed_count,
+        "errors": errors if errors else None
+    }
+
+
 # ============ DOCUMENT MANAGEMENT ROUTES ============
 
 @api_router.post("/documents/upload")
