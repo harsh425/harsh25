@@ -25,6 +25,14 @@ const AdminLayout = ({ children }) => {
             Dashboard
           </NavLink>
           <NavLink
+            to="/companies"
+            data-testid="nav-companies"
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+          >
+            <Building2 className="w-5 h-5 mr-3" />
+            Companies
+          </NavLink>
+          <NavLink
             to="/employees"
             data-testid="nav-employees"
             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
