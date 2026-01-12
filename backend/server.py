@@ -242,6 +242,81 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     return current_user
 
 
+# ============ PASSWORD RESET ROUTES ============
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(request: PasswordResetRequest):
+    user = await db.users.find_one({"email": request.email}, {"_id": 0})
+    if not user:
+        # Don't reveal if email exists for security
+        return {"message": "If the email exists, a reset link has been sent"}
+    
+    # Generate reset token
+    reset_token = secrets.token_urlsafe(32)
+    expiry = datetime.now(timezone.utc) + timedelta(hours=1)
+    
+    # Store reset token
+    await db.password_resets.insert_one({
+        "token": reset_token,
+        "user_id": user["user_id"],
+        "email": request.email,
+        "expiry": expiry.isoformat(),
+        "used": False
+    })
+    
+    # Send reset email
+    frontend_url = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:3000").replace(":8001", ":3000")
+    reset_url = f"{frontend_url}/reset-password/{reset_token}"
+    
+    email_html = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Password Reset Request</h2>
+        <p>Hello {user['full_name']},</p>
+        <p>You requested to reset your password. Click the button below to proceed:</p>
+        <p><a href="{reset_url}" style="background: #002FA7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Reset Password</a></p>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+    </div>
+    """
+    
+    await send_email_async(request.email, "Password Reset Request", email_html)
+    
+    return {"message": "If the email exists, a reset link has been sent"}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(request: PasswordResetConfirm):
+    # Find valid reset token
+    reset = await db.password_resets.find_one({
+        "token": request.token,
+        "used": False
+    }, {"_id": 0})
+    
+    if not reset:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check expiry
+    expiry = datetime.fromisoformat(reset["expiry"])
+    if datetime.now(timezone.utc) > expiry:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Update password
+    hashed_pw = hash_password(request.new_password)
+    await db.users.update_one(
+        {"user_id": reset["user_id"]},
+        {"$set": {"password_hash": hashed_pw}}
+    )
+    
+    # Mark token as used
+    await db.password_resets.update_one(
+        {"token": request.token},
+        {"$set": {"used": True}}
+    )
+    
+    await log_activity(reset["user_id"], "password_reset", f"Password reset for {reset['email']}")
+    
+    return {"message": "Password reset successful"}
+
+
 # ============ EMPLOYEE MANAGEMENT ROUTES ============
 
 @api_router.post("/employees")
