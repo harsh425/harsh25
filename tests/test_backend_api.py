@@ -442,7 +442,7 @@ class TestAttendanceManagement:
         """Get team attendance records"""
         headers = {"Authorization": f"Bearer {TestAuthenticationFlow.token}"}
         
-        response = requests.get(f"{BASE_URL}/api/attendance/team", headers=headers)
+        response = requests.get(f"{BASE_URL}/api/attendance/team-attendance", headers=headers)
         
         print(f"Team attendance response status: {response.status_code}")
         
