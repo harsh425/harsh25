@@ -24,6 +24,7 @@ import CompanyManagement from '@/pages/CompanyManagement';
 import ReportsDashboard from '@/pages/ReportsDashboard';
 import PerformanceTracking from '@/pages/PerformanceTracking';
 import PayrollDocuments from '@/pages/PayrollDocuments';
+import PayrollManagement from '@/pages/PayrollManagement';
 
 // Auth context
 import { AuthProvider, useAuth } from '@/context/AuthContext';
