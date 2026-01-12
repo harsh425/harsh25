@@ -106,6 +106,9 @@ const Register = () => {
                 >
                   <option value="employee">Employee</option>
                   <option value="admin">HR Admin</option>
+                  <option value="hr_assistant">HR Assistant</option>
+                  <option value="manager">Manager</option>
+                  <option value="director">Director</option>
                 </select>
               </div>
             </div>
