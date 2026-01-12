@@ -104,17 +104,34 @@ const BulkImportModal = ({ isOpen, onClose, onSuccess }) => {
       const parsedData = await parseFile(file);
       
       // Validate and transform data
-      const employees = parsedData.filter(row => row.employee_id && row.full_name).map(row => ({
-        employee_id: String(row.employee_id),
-        full_name: String(row.full_name),
+      const employees = parsedData.filter(row => row.employee_number && row.first_name).map(row => ({
+        employee_number: String(row.employee_number),
+        first_name: String(row.first_name),
+        last_name: String(row.last_name),
+        date_of_birth: String(row.date_of_birth || ''),
+        gender: String(row.gender || ''),
+        marital_status: String(row.marital_status || ''),
         email: String(row.email),
+        phone_number: String(row.phone_number || ''),
+        mpesa_number: String(row.mpesa_number || ''),
+        kra_pin: String(row.kra_pin || ''),
+        nssf_number: String(row.nssf_number || ''),
+        shif_number: String(row.shif_number || ''),
+        emergency_contact_name: String(row.emergency_contact_name || ''),
+        emergency_contact_phone: String(row.emergency_contact_phone || ''),
+        emergency_contact_relationship: String(row.emergency_contact_relationship || ''),
+        emergency_contact_email: String(row.emergency_contact_email || ''),
+        bank_account_name: String(row.bank_account_name || ''),
+        bank_name: String(row.bank_name || ''),
+        bank_branch_name: String(row.bank_branch_name || ''),
+        bank_branch_code: String(row.bank_branch_code || ''),
+        bank_account_number: String(row.bank_account_number || ''),
         department: String(row.department || ''),
         position: String(row.position || ''),
         employment_type: String(row.employment_type || 'Full-time'),
         contract_start_date: String(row.contract_start_date || ''),
         contract_end_date: String(row.contract_end_date || ''),
-        phone: String(row.phone || ''),
-        emergency_contact: String(row.emergency_contact || '')
+        manager_id: String(row.manager_id || '')
       }));
 
       if (employees.length === 0) {
