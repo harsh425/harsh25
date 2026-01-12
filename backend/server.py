@@ -425,24 +425,31 @@ async def get_employee(employee_number: str, current_user: dict = Depends(get_cu
     
     return employee
 
-@api_router.patch("/employees/{employee_id}")
-async def update_employee(employee_id: str, updates: EmployeeUpdate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can update employees")
+@api_router.patch("/employees/{employee_number}")
+async def update_employee(employee_number: str, updates: EmployeeUpdate, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "hr_assistant"]:
+        raise HTTPException(status_code=403, detail="Only admins and HR assistants can update employees")
     
     update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No updates provided")
     
+    # Update full_name if first_name or last_name changed
+    if "first_name" in update_data or "last_name" in update_data:
+        employee = await db.employees.find_one({"employee_number": employee_number}, {"_id": 0})
+        first_name = update_data.get("first_name", employee.get("first_name", ""))
+        last_name = update_data.get("last_name", employee.get("last_name", ""))
+        update_data["full_name"] = f"{first_name} {last_name}"
+    
     result = await db.employees.update_one(
-        {"employee_id": employee_id},
+        {"employee_number": employee_number},
         {"$set": update_data}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Employee not found")
     
-    await log_activity(current_user["user_id"], "employee_updated", f"Updated employee {employee_id}")
+    await log_activity(current_user["user_id"], "employee_updated", f"Updated employee {employee_number}")
     return {"message": "Employee updated successfully"}
 
 @api_router.delete("/employees/{employee_id}")
