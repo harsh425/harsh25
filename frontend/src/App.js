@@ -60,6 +60,11 @@ function App() {
               <AdminDashboard />
             </PrivateRoute>
           } />
+          <Route path="/companies" element={
+            <PrivateRoute adminOnly>
+              <CompanyManagement />
+            </PrivateRoute>
+          } />
           <Route path="/employees" element={
             <PrivateRoute adminOnly>
               <EmployeeList />
