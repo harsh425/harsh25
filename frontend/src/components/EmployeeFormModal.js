@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const EmployeeFormModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
   const [companies, setCompanies] = useState([]);
