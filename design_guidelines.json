@@ -1,0 +1,160 @@
+{
+  "design_system": {
+    "name": "Nexus HR",
+    "description": "A Swiss-style, high-contrast employee management system that balances corporate precision with human warmth.",
+    "theme_strategy": "light_mode_primary",
+    "archetype": "Swiss & High-Contrast",
+    "emotional_tone": "Trustworthy, Efficient, Clear, Modern",
+    "typography": {
+      "headings": {
+        "family": "Manrope",
+        "weights": ["600", "800"],
+        "usage": "Use for all page titles, card headers, and modal titles. Tight tracking (-0.02em) for sizes over 24px."
+      },
+      "body": {
+        "family": "Figtree",
+        "weights": ["400", "500"],
+        "usage": "Primary font for all paragraphs, inputs, and data tables."
+      },
+      "mono": {
+        "family": "JetBrains Mono",
+        "weights": ["400"],
+        "usage": "Use for Contract IDs, Audit Logs, and numerical data requiring alignment."
+      }
+    },
+    "colors": {
+      "palette": {
+        "primary": {
+          "name": "International Klein Blue",
+          "hex": "#002FA7",
+          "tailwind": "bg-blue-900",
+          "usage": "Primary buttons, active states, sidebar background."
+        },
+        "secondary": {
+          "name": "Signal Orange",
+          "hex": "#FF4500",
+          "tailwind": "bg-orange-600",
+          "usage": "Call-to-actions (e.g., 'Sign Now'), urgent notifications."
+        },
+        "success": {
+          "name": "Emerald",
+          "hex": "#10B981",
+          "tailwind": "bg-emerald-500",
+          "usage": "Completed status, signed contracts."
+        },
+        "background": {
+          "base": "#F8FAFC",
+          "surface": "#FFFFFF",
+          "tailwind_base": "bg-slate-50",
+          "tailwind_surface": "bg-white"
+        },
+        "text": {
+          "primary": "#0F172A",
+          "secondary": "#64748B",
+          "tailwind_primary": "text-slate-900",
+          "tailwind_secondary": "text-slate-500"
+        }
+      },
+      "gradients": {
+        "forbidden": true,
+        "exception": "Subtle 'Tracing Beam' effect on active cards only."
+      }
+    },
+    "layout": {
+      "spacing_scale": "Generous (2x standard). Use p-8 or p-12 for main containers.",
+      "grid_systems": {
+        "admin_dashboard": {
+          "type": "Control Room Grid",
+          "structure": "grid-cols-1 md:grid-cols-4 gap-6",
+          "rules": "Dense, data-heavy. Widgets must stretch to fill height."
+        },
+        "employee_dashboard": {
+          "type": "Tetris Grid",
+          "structure": "grid-cols-1 md:grid-cols-12 gap-8",
+          "rules": "Asymmetrical. Mix hero widgets (col-span-8) with small stats (col-span-2)."
+        }
+      },
+      "containers": {
+        "card_style": "Flat, 1px border (border-slate-200), no shadow by default. Hover adds shadow-lg and slight lift.",
+        "radius": "rounded-none or rounded-sm (max 4px) for a technical feel."
+      }
+    },
+    "components": {
+      "buttons": {
+        "style": "Sharp edges or slightly rounded (rounded-sm). High contrast text.",
+        "hover": "Must change background color significantly, not just opacity."
+      },
+      "inputs": {
+        "style": "bg-white border-slate-300 focus:ring-2 focus:ring-blue-900 focus:border-transparent rounded-sm",
+        "labels": "Uppercase, tracking-wide, text-xs, font-bold text-slate-500"
+      },
+      "navigation": {
+        "admin": "Sidebar (Left). Dark background (Slate 900) with white text.",
+        "employee": "Top Navbar. White background with 1px bottom border. Glassmorphism if sticky."
+      },
+      "visual_enhancers": {
+        "tracing_beam": "Use for 'Action Required' cards (e.g., Pending Contracts).",
+        "grid_borders": "Use for Document Management tables to separate rows/cols clearly."
+      }
+    },
+    "assets": {
+      "icons": {
+        "library": "Phosphor Icons",
+        "style": "Regular or Duotone",
+        "usage": "Use specific icons for actions (e.g., 'PenNib' for Sign, 'FolderOpen' for Docs)."
+      },
+      "images": {
+        "hero_bg": {
+          "url": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBvZmZpY2UlMjBpbnRlcmlvcnxlbnwwfHx8fDE3NjgyMjkwOTV8MA&ixlib=rb-4.1.0&q=85",
+          "description": "Modern office hallway, use for Login/Register background with overlay."
+        },
+        "admin_header": {
+          "url": "https://images.unsplash.com/photo-1497366811353-6870744d04b2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBvZmZpY2UlMjBpbnRlcmlvcnxlbnwwfHx8fDE3NjgyMjkwOTV8MA&ixlib=rb-4.1.0&q=85",
+          "description": "Boardroom, use for Admin Dashboard welcome section."
+        },
+        "avatars": [
+          {
+            "url": "https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjgyMjkxMDl8MA&ixlib=rb-4.1.0&q=85",
+            "description": "Male profile"
+          },
+          {
+            "url": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjgyMjkxMDl8MA&ixlib=rb-4.1.0&q=85",
+            "description": "Female profile 1"
+          },
+          {
+            "url": "https://images.unsplash.com/photo-1581065178047-8ee15951ede6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjgyMjkxMDl8MA&ixlib=rb-4.1.0&q=85",
+            "description": "Female profile 2"
+          }
+        ]
+      }
+    },
+    "motion": {
+      "transitions": "transition-all duration-300 ease-out",
+      "hover_effects": "scale-[1.02] for cards, -translate-y-1 for buttons.",
+      "page_load": "Staggered fade-in for grid items."
+    },
+    "accessibility": {
+      "contrast": "Ensure 4.5:1 ratio for text. Use Slate-900 on Slate-50.",
+      "focus_states": "Visible ring-2 ring-offset-2 ring-blue-600.",
+      "reduced_motion": "Respect prefers-reduced-motion media query."
+    }
+  },
+  "instructions_to_main_agent": [
+    "Implement the 'Swiss & High-Contrast' theme. Avoid gradients.",
+    "Use 'Manrope' for all headings and 'Figtree' for body text.",
+    "Create two distinct layouts: Sidebar for Admin, Top-nav for Employee.",
+    "Use the provided image URLs for backgrounds and avatars. DO NOT use placeholders.",
+    "Implement 'Tracing Beam' effect for the 'Sign Contract' card.",
+    "Ensure all interactive elements have data-testid attributes.",
+    "Use Shadcn components but override rounded-lg with rounded-sm for a sharper look.",
+    "For the Document Management section, use a dense table layout with visible grid borders."
+  ],
+  "universal_guidelines": [
+    "Do not use generic centered layouts.",
+    "Create depth through layered design elements.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) for sticky headers.",
+    "Never use AI assistant Emoji characters.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable."
+  ]
+}
