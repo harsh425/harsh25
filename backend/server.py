@@ -559,28 +559,54 @@ async def create_employee(employee: EmployeeCreate, current_user: dict = Depends
     if current_user["role"] not in ["admin", "hr_assistant"]:
         raise HTTPException(status_code=403, detail="Only admins and HR assistants can create employees")
     
-    existing = await db.employees.find_one({"employee_number": employee.employee_number}, {"_id": 0})
+    # Validate company exists
+    company = await db.companies.find_one({"company_id": employee.company_id}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    if company["status"] != "active":
+        raise HTTPException(status_code=400, detail="Cannot add employees to inactive company")
+    
+    # Validate employee number starts with company prefix
+    if not employee.employee_number.upper().startswith(company["prefix"]):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Employee number must start with company prefix '{company['prefix']}'"
+        )
+    
+    # Check if employee number already exists for active employees
+    existing = await db.employees.find_one({
+        "employee_number": employee.employee_number.upper(),
+        "status": {"$in": ["active", "on_leave"]}
+    }, {"_id": 0})
+    
     if existing:
-        raise HTTPException(status_code=400, detail="Employee number already exists")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Employee number '{employee.employee_number.upper()}' already exists for an active employee. Cannot reuse unless previous employee is inactive/suspended."
+        )
     
     emp_doc = employee.model_dump()
+    emp_doc["employee_number"] = employee.employee_number.upper()
+    emp_doc["company_name"] = company["company_name"]
     emp_doc["created_at"] = datetime.now(timezone.utc).isoformat()
     emp_doc["status"] = "active"
     emp_doc["created_by"] = current_user["user_id"]
-    emp_doc["full_name"] = f"{employee.first_name} {employee.last_name}"  # For backward compatibility
+    emp_doc["full_name"] = f"{employee.first_name} {employee.last_name}"
+    emp_doc["transfer_history"] = []
     
     # Initialize leave balances (Kenyan labor law: 21 days annual leave)
     emp_doc["leave_balance"] = {
         "annual": 21,
-        "sick": 30,  # Not usually limited but tracked
-        "maternity": 0,  # Allocated as needed
-        "paternity": 0   # Allocated as needed
+        "sick": 30,
+        "maternity": 0,
+        "paternity": 0
     }
     
     await db.employees.insert_one(emp_doc)
-    await log_activity(current_user["user_id"], "employee_created", f"Created employee {employee.employee_number}")
+    await log_activity(current_user["user_id"], "employee_created", f"Created employee {employee.employee_number.upper()} for {company['company_name']}")
     
-    return {"message": "Employee created successfully", "employee_number": employee.employee_number}
+    return {"message": "Employee created successfully", "employee_number": employee.employee_number.upper()}
 
 @api_router.get("/employees")
 async def get_all_employees(current_user: dict = Depends(get_current_user)):
