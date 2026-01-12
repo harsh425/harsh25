@@ -38,6 +38,16 @@ const EmployeeLayout = ({ children }) => {
                 <FileText className="w-4 h-4" />
                 My Documents
               </NavLink>
+              <NavLink
+                to="/my-leave"
+                data-testid="nav-my-leave"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-4 py-2 rounded-sm transition ${isActive ? 'bg-blue-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+                }
+              >
+                <Calendar className="w-4 h-4" />
+                My Leave
+              </NavLink>
 
               <div className="flex items-center gap-3 ml-6 pl-6 border-l border-slate-200">
                 <span className="text-sm text-slate-600">{user?.full_name}</span>
