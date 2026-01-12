@@ -114,6 +114,11 @@ function App() {
               <PayrollDocuments />
             </PrivateRoute>
           } />
+          <Route path="/payroll" element={
+            <PrivateRoute adminOnly>
+              <PayrollManagement />
+            </PrivateRoute>
+          } />
           
           {/* Employee Routes */}
           <Route path="/employee-dashboard" element={
