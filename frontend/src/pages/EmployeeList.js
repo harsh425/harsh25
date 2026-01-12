@@ -342,6 +342,13 @@ const EmployeeList = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Bulk Import Modal */}
+        <BulkImportModal
+          isOpen={showBulkImportModal}
+          onClose={() => setShowBulkImportModal(false)}
+          onSuccess={fetchEmployees}
+        />
       </div>
     </AdminLayout>
   );
