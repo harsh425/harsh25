@@ -525,12 +525,13 @@ async def upload_document(
     employee_id: str,
     category: str,
     file: UploadFile = File(...),
+    document_type: str = "personal",  # "personal" or "payroll"
     expiry_date: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
     # Check permissions
-    if current_user["role"] != "admin":
-        employee = await db.employees.find_one({"employee_id": employee_id}, {"_id": 0})
+    if current_user["role"] not in ["admin", "hr_assistant"]:
+        employee = await db.employees.find_one({"employee_number": employee_id}, {"_id": 0})
         if not employee or employee["email"] != current_user["email"]:
             raise HTTPException(status_code=403, detail="Access denied")
     
@@ -544,6 +545,7 @@ async def upload_document(
         metadata={
             "employee_id": employee_id,
             "category": category,
+            "document_type": document_type,
             "uploaded_by": current_user["user_id"],
             "uploaded_at": datetime.now(timezone.utc).isoformat(),
             "content_type": file.content_type
@@ -555,6 +557,7 @@ async def upload_document(
         "document_id": str(uuid.uuid4()),
         "employee_id": employee_id,
         "category": category,
+        "document_type": document_type,
         "filename": file.filename,
         "file_id": str(file_id),
         "uploaded_by": current_user["user_id"],
@@ -565,7 +568,7 @@ async def upload_document(
     }
     
     await db.documents.insert_one(doc_meta)
-    await log_activity(current_user["user_id"], "document_uploaded", f"Uploaded {category} document for {employee_id}")
+    await log_activity(current_user["user_id"], "document_uploaded", f"Uploaded {document_type} {category} document for {employee_id}")
     
     return {"message": "Document uploaded successfully", "document_id": doc_meta["document_id"]}
 
