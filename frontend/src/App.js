@@ -106,6 +106,11 @@ function App() {
               <LeaveManagement />
             </PrivateRoute>
           } />
+          <Route path="/my-attendance" element={
+            <PrivateRoute>
+              <AttendancePage />
+            </PrivateRoute>
+          } />
           
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
